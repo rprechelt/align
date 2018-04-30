@@ -6,6 +6,42 @@ import scipy.optimize as optimize
 __all__ = ['xcorr_delay', 'apply_delay']
 
 
+def fit_poly(x: np.ndarray) -> float:
+    """
+    Peform a 3-point quadratic interpolation to find
+    the maximum of `x`.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        A length-3 array centered around the maximum
+
+    Returns
+    -------
+    float:
+        The location of the maximum in samples w.r.t to the start of `x`
+    """
+    return 1 + (x[2] - x[0])/(2*(2*x[1]-x[0] - x[2]))
+
+
+def fit_gauss(x: np.ndarray) -> float:
+    """
+    Peform a 3-point Gaussian interpolation to find
+    the maximum of `x`.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        A length-3 array centered around the maximum
+
+    Returns
+    -------
+    float:
+        The location of the maximum in samples w.r.t to the start of `x`
+    """
+    return 1 + (np.log(x[2]) - np.log(x[0])) / (4*np.log(x[1]) - 2*np.log(x[0]) - 2*np.log(x[2]))
+
+
 def xcorr_delay(x: np.ndarray, y: np.ndarray, factor: int = 1, method='sample', **kwargs) -> float:
     """
     Use the standard cross-correlation method to compute the relative
@@ -54,17 +90,21 @@ def xcorr_delay(x: np.ndarray, y: np.ndarray, factor: int = 1, method='sample', 
     x = signal.resample(x, factor*len(x))
     y = signal.resample(y, factor*len(y))
 
+    # compute the cross-correlation
+    xcorr = np.correlate(x, y, mode='full', **kwargs)
+
     # the maximum of the cross correlation is a coarse estimate for the delay
-    sample_delay = np.argmax(np.correlate(x, y, mode='full', **kwargs))
+    sample_delay = np.argmax(xcorr)
 
     if method == 'sample':
         # return the raw delay and backout the upsampling factor
         return sample_delay / float(factor)
     elif method == 'poly':
-        pass
+        return (sample_delay
+                + fit_poly(xcorr[sample_delay-1:sample_delay+2])) / float(factor)
     elif method == 'gauss':
-        pass
-
+        return (sample_delay
+                + fit_gauss(xcorr[sample_delay-1:sample_delay+2])) / float(factor)
 
 
 def apply_delay(x: np.ndarray, delay: float, **kwargs) -> np.ndarray:
@@ -105,4 +145,3 @@ def apply_delay(x: np.ndarray, delay: float, **kwargs) -> np.ndarray:
         return np.real(delayed)
     else: # otherwise return the complex signal
         return delayed
-
