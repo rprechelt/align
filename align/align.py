@@ -2,6 +2,7 @@ import scipy
 import numpy as np
 import scipy.signal as signal
 import scipy.optimize as optimize
+import scipy.stats as stats
 
 __all__ = ['xcorr_delay', 'apply_delay']
 
@@ -21,7 +22,7 @@ def fit_poly(x: np.ndarray) -> float:
     float:
         The location of the maximum in samples w.r.t to the start of `x`
     """
-    return 1 + (x[2] - x[0])/(2*(2*x[1]-x[0] - x[2]))
+    return (x[2] - x[0])/(2*(2*x[1]-x[0] - x[2]))
 
 
 def fit_gauss(x: np.ndarray) -> float:
@@ -39,7 +40,7 @@ def fit_gauss(x: np.ndarray) -> float:
     float:
         The location of the maximum in samples w.r.t to the start of `x`
     """
-    return 1 + (np.log(x[2]) - np.log(x[0])) / (4*np.log(x[1]) - 2*np.log(x[0]) - 2*np.log(x[2]))
+    return (np.log(x[2]) - np.log(x[0])) / (4*np.log(x[1]) - 2*np.log(x[0]) - 2*np.log(x[2]))
 
 
 def xcorr_delay(x: np.ndarray, y: np.ndarray, factor: int = 1, method='sample', **kwargs) -> float:
@@ -87,24 +88,29 @@ def xcorr_delay(x: np.ndarray, y: np.ndarray, factor: int = 1, method='sample', 
     factor = int(factor)
 
     # we resample x and y by the desired upsampling factor
-    x = signal.resample(x, factor*len(x))
-    y = signal.resample(y, factor*len(y))
+    xs = signal.resample(x, factor*len(x))
+    ys = signal.resample(y, factor*len(y))
 
     # compute the cross-correlation
-    xcorr = np.correlate(x, y, mode='full', **kwargs)
+    xcorr = np.correlate(xs, ys, mode='same', **kwargs)
 
     # the maximum of the cross correlation is a coarse estimate for the delay
     sample_delay = np.argmax(xcorr)
 
+    # modify the estimated delay based on desired method
     if method == 'sample':
-        # return the raw delay and backout the upsampling factor
-        return sample_delay / float(factor)
+        pass
     elif method == 'poly':
-        return (sample_delay
-                + fit_poly(xcorr[sample_delay-1:sample_delay+2])) / float(factor)
+        sample_delay += fit_poly(xcorr[sample_delay-1:sample_delay+2])
     elif method == 'gauss':
-        return (sample_delay
-                + fit_gauss(xcorr[sample_delay-1:sample_delay+2])) / float(factor)
+        sample_delay += fit_gauss(xcorr[sample_delay-1:sample_delay+2])
+
+    # a correction for odd/even upsampling effects
+    odd_even_correction = -0.5 if (len(x) % 2 == 1) and (factor > 1) else 0
+
+    # and back out the upsampling factor
+    # return (sample_delay / factor) - (len(x)//2)
+    return (sample_delay / factor) - (len(x)//2) + odd_even_correction
 
 
 def apply_delay(x: np.ndarray, delay: float, **kwargs) -> np.ndarray:

@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='align',
-      version='0.0.1',
+      version='0.0.2',
       description='Simple alignment and registration of 1-dimensional signals.',
       long_description=open('README.md').read(),
       author='Remy Prechelt',
