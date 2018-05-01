@@ -4,7 +4,7 @@ import scipy.signal as signal
 import scipy.optimize as optimize
 import scipy.stats as stats
 
-__all__ = ['xcorr_delay', 'apply_delay']
+__all__ = ['xcorr_delay', 'apply_delay', 'fft_delay']
 
 
 def fit_poly(x: np.ndarray) -> float:
@@ -111,6 +111,54 @@ def xcorr_delay(x: np.ndarray, y: np.ndarray, factor: int = 1, method='sample', 
     # and back out the upsampling factor
     # return (sample_delay / factor) - (len(x)//2)
     return (sample_delay / factor) - (len(x)//2) + odd_even_correction
+
+
+def fft_delay(x: np.ndarray, y: np.ndarray) -> float:
+    """
+    Use linear phase shift induced by a constant time delay to estimate
+    the delay between signals by fitting a line to this linear phase.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The reference signal to align to
+    y: np.ndarray
+        The signal to compute the delay of w.r.t to x
+
+    Returns
+    -------
+    float:
+        The estimated delay in samples
+    """
+
+    # the length of the reference signal
+    N = len(x)
+
+    # compute the FFT of both signals
+    X = np.fft.fft(x)
+    Y = np.fft.fft(y)
+
+    # and the cross correlation in frequency and time
+    XC = X*np.conj(Y)
+    xcorr = np.fft.ifft(XC)
+
+    # and the estimate of the sample-level delay
+    sample_delay = np.argmax(xcorr)
+
+    # we weight by the absolute value of the cross-correlation
+    W = np.abs(XC[1:N//2])
+
+    # the phase shift corresponding to the coarse sample_delay
+    phi_int = -2*np.pi*sample_delay/N*np.arange(1, N//2)
+
+    # and compute the new phase after coarse correction - unwrapped
+    phi = np.mod(np.angle(XC[1:N//2]) - phi_int+np.pi, 2*np.pi) - np.pi
+
+    # and the fractional sample delay using weighted linear regression
+    frac_delay = -(np.sum(np.arange(1, N//2)*phi*W*W)/np.sum((np.arange(1, N//2)*W)**2))*(N//2)/np.pi
+
+    # the total delay is the sum of both
+    return sample_delay + frac_delay
 
 
 def apply_delay(x: np.ndarray, delay: float, **kwargs) -> np.ndarray:

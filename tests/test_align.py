@@ -114,3 +114,31 @@ def test_gauss_align():
     d = align.xcorr_delay(x, y, method='gauss')
     # and check that the alignment is within a certain known accuracy
     assert(np.abs(d-d_padded) < 0.05)
+
+
+def test_fft_align():
+    """
+    Test FFT phase shift alignment
+    """
+    for N in [178, 179, 200, 201]:
+        # make some time arrays and define a time delta
+        t = np.linspace(-2*np.pi, 2*np.pi, N//2)
+        dt = 3.675*(t[1]-t[0])
+        t = np.linspace(-1, 1, N, endpoint=False)
+        true = dt/(t[1] - t[0])
+
+        # construct two identical gaussian pulses
+        x = np.real(signal.gausspulse(t, fc=5))
+        y = np.real(signal.gausspulse(t+dt, fc=5))
+
+        # compute the delay with upsampling
+        delay = align.fft_delay(x, y)
+
+        # and apply the delay
+        y = align.apply_delay(y, delay)
+
+        # and check that the alignment is within a certain known accuracy
+        assert(np.abs(true - delay) < 1e-3)
+        assert(np.std(x-y) < 1e-3)
+
+
