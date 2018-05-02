@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
+import align
 from setuptools import setup
 
 setup(name='align',
-      version='0.0.3',
+      version=align.__version__,
       description='Simple alignment and registration of 1-dimensional signals.',
       long_description=open('README.md').read(),
       author='Remy Prechelt',
