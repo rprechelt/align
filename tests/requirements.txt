@@ -30,7 +30,7 @@ pylint-plugin-utils==0.2.6
 pytest==3.5.0
 pytest-cov==2.5.1
 python-coveralls==2.9.1
-PyYAML==3.12
+PyYAML==5.1
 requests==2.18.4
 requirements-detector==0.5.2
 setoptconf==0.2.0
