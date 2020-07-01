@@ -1,8 +1,8 @@
 from os import path
-from setuptools import setup, find_packages
+from setuptools import setup
 
 # the align version
-__version__ = "0.0.1"
+__version__ = "0.0.4"
 
 # get the absolute path of this project
 here = path.abspath(path.dirname(__file__))
@@ -30,10 +30,10 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    keywords=["signal processing alignment delay waveforms "],
+    keywords=["signal", "processing", "alignment", "delay", "waveforms"],
     packages=["align"],
     python_requires=">=3.6*, <4",
-    install_requires=[],
+    install_requires=["numpy", "scipy", "numba"],
     extras_require={
         "test": [
             "pytest",
