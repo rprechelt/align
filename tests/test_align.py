@@ -8,7 +8,7 @@ def test_align_version() -> None:
     """
     Check the align version.
     """
-    assert align.__version__ == "0.0.4"
+    assert align.__version__ == "0.0.5"
 
 
 def test_simple_align() -> None:

@@ -5,7 +5,15 @@ import scipy.signal as signal
 
 from .fit import fit_gauss, fit_poly
 
-__all__ = ["align", "xcorr_delay", "apply_delay", "fft_delay"]
+__all__ = [
+    "align",
+    "get_delay",
+    "xcorr_delay",
+    "apply_delay",
+    "fft_delay",
+    "absmax_delay",
+    "argmax_delay",
+]
 
 
 def align(
@@ -26,22 +34,87 @@ def align(
         The method to use to find the delay.
     """
 
+    # apply the delay and return
+    return apply_delay(y, get_delay(x, y, method, **kwargs))
+
+
+def get_delay(x: np.ndarray, y: np.ndarray, method: str, **kwargs: Any) -> np.ndarray:
+    """
+    Get the relative delay between `x` and `y`.
+
+    All other arguments are passed along to the alignment method.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The 1D reference signal to align to.
+    y: np.ndarray
+        The 1D signal to find the delay of with respective to `x`.
+    method: str
+        The method to use to find the delay.
+    """
+
     # match on the method
     if method == "xcorr":
         delay = xcorr_delay(x, y, **kwargs)
     elif method == "fft":
         delay = fft_delay(x, y, **kwargs)
+    elif method == "absmax":
+        delay = absmax_delay(x, y)
+    elif method == "argmax":
+        delay = argmax_delay(x, y)
     else:
         raise ValueError(f"Unknown alignment method: {method}")
 
-    # we now have the delay needed to bring x to y
+    return delay
 
-    # apply the delay and return
-    return apply_delay(y, delay)
+
+def absmax_delay(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """
+    Get the delay between `x` and `y` using the
+    index of the maximum absolute value in 'y'
+    and 'x'.
+
+    This is the fastest method but has the lowest accuracy
+    unless the signals are extremely similar.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The 1D reference signal to align to.
+    y: np.ndarray
+        The 1D signal to find the delay of with respective to `x`.
+    """
+
+    return float(np.abs(x).argmax() - np.abs(y).argmax())
+
+
+def argmax_delay(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """
+    Get the delay between `x` and `y` using the
+    index of the maximum absolute value in 'y'
+    and 'x'.
+
+    This is the fastest method but has the lowest accuracy
+    unless the signals are extremely similar.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        The 1D reference signal to align to.
+    y: np.ndarray
+        The 1D signal to find the delay of with respective to `x`.
+    """
+
+    return float(x.argmax() - y.argmax())
 
 
 def xcorr_delay(
-    x: np.ndarray, y: np.ndarray, factor: int = 1, fit: str = "sample", **kwargs: Any,
+    x: np.ndarray,
+    y: np.ndarray,
+    factor: int = 1,
+    fit: str = "sample",
+    **kwargs: Any,
 ) -> float:
     """
     Use the standard cross-correlation method to compute the relative

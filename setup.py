@@ -2,7 +2,7 @@ from os import path
 from setuptools import setup
 
 # the align version
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 # get the absolute path of this project
 here = path.abspath(path.dirname(__file__))
