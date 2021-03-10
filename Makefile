@@ -23,7 +23,7 @@ black:
 	${PYTHON} -m black -t py37 align tests
 
 isort:
-	${PYTHON} -m isort --atomic -rc -y align tests
+	${PYTHON} -m isort --atomic -rc align tests
 
 mypy:
 	${PYTHON} -m mypy align

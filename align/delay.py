@@ -38,7 +38,7 @@ def align(
     return apply_delay(y, get_delay(x, y, method, **kwargs))
 
 
-def get_delay(x: np.ndarray, y: np.ndarray, method: str, **kwargs: Any) -> np.ndarray:
+def get_delay(x: np.ndarray, y: np.ndarray, method: str, **kwargs: Any) -> float:
     """
     Get the relative delay between `x` and `y`.
 
@@ -69,7 +69,7 @@ def get_delay(x: np.ndarray, y: np.ndarray, method: str, **kwargs: Any) -> np.nd
     return delay
 
 
-def absmax_delay(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+def absmax_delay(x: np.ndarray, y: np.ndarray) -> float:
     """
     Get the delay between `x` and `y` using the
     index of the maximum absolute value in 'y'
@@ -89,7 +89,7 @@ def absmax_delay(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     return float(np.abs(x).argmax() - np.abs(y).argmax())
 
 
-def argmax_delay(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+def argmax_delay(x: np.ndarray, y: np.ndarray) -> float:
     """
     Get the delay between `x` and `y` using the
     index of the maximum absolute value in 'y'
@@ -164,10 +164,10 @@ def xcorr_delay(
     ys = signal.resample(y, factor * y.shape[-1])
 
     # compute the cross-correlation
-    xcorr = np.correlate(xs, ys, mode="same", **kwargs)
+    xcorr = np.correlate(xs, ys, mode="same")
 
     # the maximum of the cross correlation is a coarse estimate for the delay
-    sample_delay = np.argmax(xcorr)
+    sample_delay = int(np.argmax(xcorr))
 
     # modify the estimated delay based on desired fit
     if fit == "sample" or fit is None:
